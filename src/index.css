@@ -127,3 +127,10 @@
     @apply font-sans;
     }
 }
+
+.landing-page {
+  background:
+    radial-gradient(ellipse at 82% 13%, #ffe9db 0%, transparent 48%),
+    radial-gradient(ellipse at 12% 17%, #cddfff 0%, transparent 56%),
+    #f5f7fa;
+}
