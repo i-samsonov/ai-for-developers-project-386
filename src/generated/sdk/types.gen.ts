@@ -33,6 +33,14 @@ export type CreateEventType = {
     durationMinutes: number;
 };
 
+export type DeleteBookingResult = {
+    deleted: true;
+};
+
+export type DeleteEventTypeResult = {
+    deleted: true;
+};
+
 export type ErrorDetail = {
     code: string;
     message: string;
@@ -60,11 +68,18 @@ export type SlotsResponse = {
 };
 
 export type UpcomingBooking = {
+    id: number;
     eventType: EventType;
     startsAt: string;
     endsAt: string;
     guestName: string;
     guestEmail: string;
+};
+
+export type UpdateEventType = {
+    name: string;
+    description: string;
+    durationMinutes: number;
 };
 
 export type CalendarApiListUpcomingBookingsData = {
@@ -82,6 +97,33 @@ export type CalendarApiListUpcomingBookingsResponses = {
 };
 
 export type CalendarApiListUpcomingBookingsResponse = CalendarApiListUpcomingBookingsResponses[keyof CalendarApiListUpcomingBookingsResponses];
+
+export type CalendarApiDeleteBookingData = {
+    body?: never;
+    path: {
+        id: number;
+    };
+    query?: never;
+    url: '/api/admin/bookings/{id}';
+};
+
+export type CalendarApiDeleteBookingErrors = {
+    /**
+     * The server cannot find the requested resource.
+     */
+    404: ErrorDetail;
+};
+
+export type CalendarApiDeleteBookingError = CalendarApiDeleteBookingErrors[keyof CalendarApiDeleteBookingErrors];
+
+export type CalendarApiDeleteBookingResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: DeleteBookingResult;
+};
+
+export type CalendarApiDeleteBookingResponse = CalendarApiDeleteBookingResponses[keyof CalendarApiDeleteBookingResponses];
 
 export type CalendarApiGetBookingSettingsData = {
     body?: never;
@@ -176,6 +218,68 @@ export type CalendarApiCreateEventTypeResponses = {
 };
 
 export type CalendarApiCreateEventTypeResponse = CalendarApiCreateEventTypeResponses[keyof CalendarApiCreateEventTypeResponses];
+
+export type CalendarApiDeleteEventTypeData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/event-types/{id}';
+};
+
+export type CalendarApiDeleteEventTypeErrors = {
+    /**
+     * The server cannot find the requested resource.
+     */
+    404: ErrorDetail;
+    /**
+     * The request conflicts with the current state of the server.
+     */
+    409: ErrorDetail;
+};
+
+export type CalendarApiDeleteEventTypeError = CalendarApiDeleteEventTypeErrors[keyof CalendarApiDeleteEventTypeErrors];
+
+export type CalendarApiDeleteEventTypeResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: DeleteEventTypeResult;
+};
+
+export type CalendarApiDeleteEventTypeResponse = CalendarApiDeleteEventTypeResponses[keyof CalendarApiDeleteEventTypeResponses];
+
+export type CalendarApiUpdateEventTypeData = {
+    body: UpdateEventType;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/event-types/{id}';
+};
+
+export type CalendarApiUpdateEventTypeErrors = {
+    /**
+     * The server could not understand the request due to invalid syntax.
+     */
+    400: ErrorDetail;
+    /**
+     * The server cannot find the requested resource.
+     */
+    404: ErrorDetail;
+};
+
+export type CalendarApiUpdateEventTypeError = CalendarApiUpdateEventTypeErrors[keyof CalendarApiUpdateEventTypeErrors];
+
+export type CalendarApiUpdateEventTypeResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: EventType;
+};
+
+export type CalendarApiUpdateEventTypeResponse = CalendarApiUpdateEventTypeResponses[keyof CalendarApiUpdateEventTypeResponses];
 
 export type CalendarApiListSlotsData = {
     body?: never;

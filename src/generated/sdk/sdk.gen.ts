@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CalendarApiCreateBookingData, CalendarApiCreateBookingErrors, CalendarApiCreateBookingResponses, CalendarApiCreateEventTypeData, CalendarApiCreateEventTypeErrors, CalendarApiCreateEventTypeResponses, CalendarApiGetBookingSettingsData, CalendarApiGetBookingSettingsResponses, CalendarApiListEventTypesData, CalendarApiListEventTypesResponses, CalendarApiListSlotsData, CalendarApiListSlotsErrors, CalendarApiListSlotsResponses, CalendarApiListUpcomingBookingsData, CalendarApiListUpcomingBookingsResponses } from './types.gen';
+import type { CalendarApiCreateBookingData, CalendarApiCreateBookingErrors, CalendarApiCreateBookingResponses, CalendarApiCreateEventTypeData, CalendarApiCreateEventTypeErrors, CalendarApiCreateEventTypeResponses, CalendarApiDeleteBookingData, CalendarApiDeleteBookingErrors, CalendarApiDeleteBookingResponses, CalendarApiDeleteEventTypeData, CalendarApiDeleteEventTypeErrors, CalendarApiDeleteEventTypeResponses, CalendarApiGetBookingSettingsData, CalendarApiGetBookingSettingsResponses, CalendarApiListEventTypesData, CalendarApiListEventTypesResponses, CalendarApiListSlotsData, CalendarApiListSlotsErrors, CalendarApiListSlotsResponses, CalendarApiListUpcomingBookingsData, CalendarApiListUpcomingBookingsResponses, CalendarApiUpdateEventTypeData, CalendarApiUpdateEventTypeErrors, CalendarApiUpdateEventTypeResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -21,6 +21,13 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 export const calendarApiListUpcomingBookings = <ThrowOnError extends boolean = false>(options?: Options<CalendarApiListUpcomingBookingsData, ThrowOnError>) => {
     return (options?.client ?? client).get<CalendarApiListUpcomingBookingsResponses, unknown, ThrowOnError>({
         url: '/api/admin/bookings',
+        ...options
+    });
+};
+
+export const calendarApiDeleteBooking = <ThrowOnError extends boolean = false>(options: Options<CalendarApiDeleteBookingData, ThrowOnError>) => {
+    return (options.client ?? client).delete<CalendarApiDeleteBookingResponses, CalendarApiDeleteBookingErrors, ThrowOnError>({
+        url: '/api/admin/bookings/{id}',
         ...options
     });
 };
@@ -53,6 +60,24 @@ export const calendarApiListEventTypes = <ThrowOnError extends boolean = false>(
 export const calendarApiCreateEventType = <ThrowOnError extends boolean = false>(options: Options<CalendarApiCreateEventTypeData, ThrowOnError>) => {
     return (options.client ?? client).post<CalendarApiCreateEventTypeResponses, CalendarApiCreateEventTypeErrors, ThrowOnError>({
         url: '/api/event-types',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const calendarApiDeleteEventType = <ThrowOnError extends boolean = false>(options: Options<CalendarApiDeleteEventTypeData, ThrowOnError>) => {
+    return (options.client ?? client).delete<CalendarApiDeleteEventTypeResponses, CalendarApiDeleteEventTypeErrors, ThrowOnError>({
+        url: '/api/event-types/{id}',
+        ...options
+    });
+};
+
+export const calendarApiUpdateEventType = <ThrowOnError extends boolean = false>(options: Options<CalendarApiUpdateEventTypeData, ThrowOnError>) => {
+    return (options.client ?? client).patch<CalendarApiUpdateEventTypeResponses, CalendarApiUpdateEventTypeErrors, ThrowOnError>({
+        url: '/api/event-types/{id}',
         ...options,
         headers: {
             'Content-Type': 'application/json',

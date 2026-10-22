@@ -12,7 +12,7 @@ const slotStart = (date: string, index: number) => dayStart(date) + (9 * 60 + in
 const failure = (code: string, message: string) => ({ code, message })
 
 type EventRow = EventType
-type BookingRow = { eventTypeId: string; startsAt: number; endsAt: number; guestName: string; guestEmail: string }
+type BookingRow = { id: number; eventTypeId: string; startsAt: number; endsAt: number; guestName: string; guestEmail: string }
 
 export function createApp(options: { databasePath?: string; now?: () => Date; logger?: boolean } = {}) {
   const app = Fastify({ logger: options.logger ?? true })
@@ -58,6 +58,23 @@ export function createApp(options: { databasePath?: string; now?: () => Date; lo
       }
       return { id, name, description, durationMinutes }
     },
+    CalendarApi_updateEventType: async (request, reply) => {
+      const { id } = request.params
+      const { durationMinutes } = request.body
+      const name = request.body.name.trim()
+      const description = request.body.description.trim()
+      if (!name || !description) return reply.code(400).send(failure('invalid_request', 'Название и описание обязательны'))
+      if (!findType(id)) return reply.code(404).send(failure('not_found', 'Тип события не найден'))
+      db.run('UPDATE event_types SET name = ?, description = ?, durationMinutes = ? WHERE id = ?', name, description, durationMinutes, id)
+      return { id, name, description, durationMinutes }
+    },
+    CalendarApi_deleteEventType: async (request, reply) => {
+      const { id } = request.params
+      if (!findType(id)) return reply.code(404).send(failure('not_found', 'Тип события не найден'))
+      if (db.get('SELECT 1 FROM bookings WHERE eventTypeId = ? LIMIT 1', id)) return reply.code(409).send(failure('conflict', 'Нельзя удалить тип события, по которому есть записи'))
+      db.run('DELETE FROM event_types WHERE id = ?', id)
+      return { deleted: true as const }
+    },
     CalendarApi_listSlots: async (request, reply) => {
       const event = findType(request.params.id)
       if (!event) return reply.code(404).send(failure('not_found', 'Тип события не найден'))
@@ -89,8 +106,14 @@ export function createApp(options: { databasePath?: string; now?: () => Date; lo
       return { confirmed: true as const }
     },
     CalendarApi_listUpcomingBookings: async () => {
-      const rows = db.all(`SELECT b.*, e.id AS typeId, e.name, e.description, e.durationMinutes FROM bookings b JOIN event_types e ON e.id = b.eventTypeId WHERE b.startsAt > ? ORDER BY b.startsAt, b.id`, now()) as (BookingRow & { typeId: string; name: string; description: string; durationMinutes: number })[]
-      return rows.map(({ typeId, name, description, durationMinutes, startsAt, endsAt, guestName, guestEmail }): UpcomingBooking => ({ eventType: { id: typeId, name, description, durationMinutes }, startsAt: new Date(startsAt).toISOString(), endsAt: new Date(endsAt).toISOString(), guestName, guestEmail }))
+      const rows = db.all(`SELECT b.*, e.id AS typeId, e.name, e.description FROM bookings b JOIN event_types e ON e.id = b.eventTypeId WHERE b.startsAt > ? ORDER BY b.startsAt, b.id`, now()) as (BookingRow & { typeId: string; name: string; description: string })[]
+      return rows.map(({ id, typeId, name, description, startsAt, endsAt, guestName, guestEmail }): UpcomingBooking => ({ id, eventType: { id: typeId, name, description, durationMinutes: (endsAt - startsAt) / 60_000 }, startsAt: new Date(startsAt).toISOString(), endsAt: new Date(endsAt).toISOString(), guestName, guestEmail }))
+    },
+    CalendarApi_deleteBooking: async (request, reply) => {
+      const { id } = request.params
+      if (!db.get('SELECT 1 FROM bookings WHERE id = ? AND startsAt > ?', id, now())) return reply.code(404).send(failure('not_found', 'Предстоящая запись не найдена'))
+      db.run('DELETE FROM bookings WHERE id = ?', id)
+      return { deleted: true as const }
     },
   })
   app.addHook('onClose', async () => { db?.close() })

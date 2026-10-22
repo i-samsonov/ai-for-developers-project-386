@@ -34,6 +34,19 @@ model CreateEventType {
   durationMinutes: int32;
 }
 
+model UpdateEventType {
+  @minLength(1) @maxLength(100)
+  name: string;
+  @minLength(1) @maxLength(1000)
+  description: string;
+  @minValue(1) @maxValue(540)
+  durationMinutes: int32;
+}
+
+model DeleteEventTypeResult {
+  deleted: true;
+}
+
 model ErrorDetail {
   code: string;
   message: string;
@@ -77,7 +90,12 @@ model BookingConfirmation {
   confirmed: true;
 }
 
+model DeleteBookingResult {
+  deleted: true;
+}
+
 model UpcomingBooking {
+  id: int32;
   eventType: EventType;
   startsAt: utcDateTime;
   endsAt: utcDateTime;
@@ -96,6 +114,12 @@ interface CalendarApi {
   @post @route("/event-types")
   createEventType(@body input: CreateEventType): EventType | BadRequest | Conflict;
 
+  @patch @route("/event-types/{id}")
+  updateEventType(@path id: string, @body input: UpdateEventType): EventType | BadRequest | NotFound;
+
+  @delete @route("/event-types/{id}")
+  deleteEventType(@path id: string): DeleteEventTypeResult | NotFound | Conflict;
+
   @get @route("/event-types/{id}/slots")
   listSlots(@path id: string, @query date: plainDate): SlotsResponse | BadRequest | NotFound;
 
@@ -104,4 +128,7 @@ interface CalendarApi {
 
   @get @route("/admin/bookings")
   listUpcomingBookings(): UpcomingBooking[];
+
+  @delete @route("/admin/bookings/{id}")
+  deleteBooking(@path id: int32): DeleteBookingResult | NotFound;
 }
