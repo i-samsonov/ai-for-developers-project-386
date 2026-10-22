@@ -1,7 +1,23 @@
 # Правила проекта
 
-- Фронтенд: `src/` — React, TypeScript, Vite, Tailwind CSS и компоненты shadcn/ui в `src/components/ui/`.
-- API: `server/` — Fastify; точка входа `server/index.ts`, маршруты регистрируются в `server/app.ts`.
-- Проверки перед коммитом: `npm run lint`, `npm test`, `npm run build`. В CI зависимости устанавливаются через `npm ci`.
-- Коммиты оформляйте по Conventional Commits: `feat:`, `fix:`, `chore:` и т. д.; несовместимые изменения помечайте `!` после типа. Это необходимо для release-please.
-- Не изменяйте `.github/workflows/hexlet-check.yml` — это проверка Хекслета.
+- `npm run dev` запускает только Vite; API запускается отдельно через `npm run dev:api` (127.0.0.1:3000, порт настраивается через `PORT`). Фронтенд пока не обращается к API.
+- Маршруты Fastify добавляйте в `server/app.ts` через `createApp()`; `server/index.ts` только запускает сервер. В относительных импортах серверного TypeScript используйте расширение `.js` для совместимости с NodeNext после сборки.
+- `npm run build` проверяет типы и собирает фронтенд в `dist/`, API — в `dist-server/`; `npm run start:api` требует предварительной сборки.
+- Перед коммитом выполняйте `npm run lint`, `npm test`, `npm run build` (тот же порядок в CI). Тесты запускают HTTP-серверы на случайных локальных портах, внешние сервисы не требуются.
+- shadcn/ui CLI вызывайте по необходимости через `npx shadcn@latest`; не добавляйте `shadcn` в зависимости приложения. Не экспортируйте `buttonVariants` из `src/components/ui/button.tsx`: это ломает Fast Refresh в Vite.
+- Коммиты оформляйте по Conventional Commits (`feat:`, `fix:`, `chore:`; несовместимые изменения — `feat!:`): release-please формирует release-PR по истории `main`.
+- Не изменяйте `.github/workflows/hexlet-check.yml` и не переименовывайте репозиторий — это проверка Хекслета.
+
+## Agent skills
+
+### Issue tracker
+
+Задачи и спецификации ведутся в GitHub Issues этого репозитория. См. `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Для разбора задач используются стандартные метки `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. См. `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Один контекст: глоссарий в корневом `GLOSSARY.md`, решения в `docs/adr/`. См. `docs/agents/domain.md`.
