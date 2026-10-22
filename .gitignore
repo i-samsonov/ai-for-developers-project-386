@@ -13,6 +13,8 @@ dist-server
 .vitest/
 dist-ssr
 *.local
+*.sqlite
+*.sqlite.tmp
 
 # Editor directories and files
 .vscode/*
