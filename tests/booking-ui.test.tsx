@@ -3,13 +3,14 @@ import { afterEach, expect, it } from 'vitest'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import App from '../src/App'
 import { createApp } from '../server/app.js'
 import { client } from '../src/generated/sdk/client.gen.js'
 import { dayAt } from '../src/booking-calendar.js'
 
 const directories: string[] = []
+const pendingRequests = new Set<Promise<Response>>()
 afterEach(() => {
   cleanup()
   window.location.hash = ''
@@ -24,8 +25,20 @@ async function server(now?: () => Date) {
   directories.push(dir)
   const app = createApp({ databasePath: join(dir, 'calendar.sqlite'), now, logger: false })
   await app.listen({ host: '127.0.0.1', port: 0 })
-  client.setConfig({ baseUrl: app.listeningOrigin })
+  client.setConfig({ baseUrl: app.listeningOrigin, fetch: (input, init) => {
+    const request = fetch(input, init)
+    pendingRequests.add(request)
+    void request.then(() => pendingRequests.delete(request), () => pendingRequests.delete(request))
+    return request
+  } })
   return app
+}
+
+async function closeServer(app: Awaited<ReturnType<typeof server>>) {
+  await act(async () => {
+    while (pendingRequests.size) await Promise.allSettled([...pendingRequests])
+  })
+  await app.close()
 }
 
 it('shows booking hours, start interval and timezone received through the SDK', async () => {
@@ -36,7 +49,7 @@ it('shows booking hours, start interval and timezone received through the SDK', 
     expect(await screen.findByText(/09:00–18:00/)).toBeTruthy()
     expect(screen.getByText(/шаг начала 30 минут/)).toBeTruthy()
     expect(screen.getByText(/Europe\/Moscow/)).toBeTruthy()
-  } finally { await app.close() }
+  } finally { await closeServer(app) }
 })
 
 it('shows past, booked and too-late starts while allowing an available date', async () => {
@@ -55,7 +68,7 @@ it('shows past, booked and too-late starts while allowing an available date', as
     expect(await screen.findByRole('button', { name: /10:00 - 10:45.*Занято/ })).toHaveProperty('disabled', true)
     expect(screen.getByRole('button', { name: /17:30 - 18:15.*Не помещается до закрытия/ })).toHaveProperty('disabled', true)
     expect(screen.getByRole('button', { name: /09:00 - 09:45.*Свободно/ })).toHaveProperty('disabled', false)
-  } finally { await app.close() }
+  } finally { await closeServer(app) }
 })
 
 it('confirms a guest booking with only the agreed message and lets the guest start again', async () => {
@@ -81,7 +94,7 @@ it('confirms a guest booking with only the agreed message and lets the guest sta
     expect(await within(main).findByRole('heading', { name: 'Выберите тип встречи' })).toBeTruthy()
     fireEvent.click(screen.getByRole('link', { name: 'Предстоящие события' }))
     expect(await screen.findByText(/Гость · guest@example.com/)).toBeTruthy()
-  } finally { await app.close() }
+  } finally { await closeServer(app) }
 })
 
 it('reports a newly occupied slot and lets the guest choose another', async () => {
@@ -104,7 +117,7 @@ it('reports a newly occupied slot and lets the guest choose another', async () =
     fireEvent.click(screen.getByRole('button', { name: 'Назад' }))
     expect(await screen.findByRole('button', { name: /09:00 - 09:30.*Занято/ })).toHaveProperty('disabled', true)
     expect(screen.getByRole('button', { name: /09:30 - 10:00.*Свободно/ })).toHaveProperty('disabled', false)
-  } finally { await app.close() }
+  } finally { await closeServer(app) }
 })
 
 it('lets the owner create a type and makes it available to guests through the SDK', async () => {
@@ -122,7 +135,7 @@ it('lets the owner create a type and makes it available to guests through the SD
     expect(await screen.findByText(/Знакомство \(intro\) · 45 мин/)).toBeTruthy()
     fireEvent.click(screen.getByRole('link', { name: 'Записаться' }))
     expect(await screen.findByRole('button', { name: /Знакомство.*Поговорим.*45 мин/ })).toBeTruthy()
-  } finally { await app.close() }
+  } finally { await closeServer(app) }
 })
 
 it('shows an empty upcoming list, then the owner sees contacts from all types in time order', async () => {
@@ -146,5 +159,5 @@ it('shows an empty upcoming list, then the owner sees contacts from all types in
     expect(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(first.parentElement?.textContent).toMatch(/Знакомство \(intro\).*10:00.*30 мин/)
     expect(second.parentElement?.textContent).toMatch(/Обсуждение \(review\).*11:00.*30 мин/)
-  } finally { await app.close() }
+  } finally { await closeServer(app) }
 })
