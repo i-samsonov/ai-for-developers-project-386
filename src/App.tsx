@@ -9,7 +9,6 @@ const dateTime = (value: string) => new Intl.DateTimeFormat('ru-RU', { timeZone:
 const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Moscow', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
 const reasonText: Record<string, string> = { past: 'Время прошло', booked: 'Занято', does_not_fit: 'Не помещается до закрытия' }
 const dateLabel = (value: string) => new Intl.DateTimeFormat('ru-RU', { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${value}T12:00:00Z`))
-const confirmationDateLabel = (value: string) => new Intl.DateTimeFormat('ru-RU', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(`${value}T12:00:00Z`))
 const endTime = (startsAt: string, durationMinutes: number) => time(new Date(new Date(startsAt).getTime() + durationMinutes * 60_000).toISOString())
 const monthLabel = (value: string) => new Intl.DateTimeFormat('ru-RU', { timeZone: 'UTC', month: 'long', year: 'numeric' }).format(new Date(`${value}-01T12:00:00Z`))
 type Page = 'home' | 'booking' | 'upcoming'
@@ -194,24 +193,10 @@ function App() {
           </ul>
         </section>
       </div> : page === 'booking' ? <>
-        {confirmed && selected && slot && date ? <section>
-          <h1 className="text-3xl font-bold">Запись на звонок</h1>
-          <div className="mt-8 grid gap-6 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)]">
-            <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold">Информация</h2>
-              <dl className="mt-4 space-y-3 text-sm">
-                <div className="rounded-xl bg-[#e9eff5] p-3"><dt className="text-slate-500">Тип встречи</dt><dd className="mt-1 font-medium">{selected.name}</dd></div>
-                <div className="rounded-xl bg-[#e9eff5] p-3"><dt className="text-slate-500">Выбранная дата</dt><dd className="mt-1 font-medium">{confirmationDateLabel(date)}</dd></div>
-                <div className="rounded-xl bg-[#e9eff5] p-3"><dt className="text-slate-500">Выбранное время</dt><dd className="mt-1 font-medium">{time(slot.startsAt)} - {endTime(slot.startsAt, selected.durationMinutes)}</dd></div>
-                <div className="rounded-xl bg-[#e9eff5] p-3"><dt className="text-slate-500">Свободно</dt><dd className="mt-1 font-medium">{slots.filter((item) => item.available).length}</dd></div>
-                <div className="rounded-xl bg-[#e9eff5] p-3"><dt className="text-slate-500">Длительности в дне</dt><dd className="mt-1 font-medium">{selected.durationMinutes} мин</dd></div>
-              </dl>
-            </aside>
-            <div className="min-h-[402px] rounded-2xl border border-slate-200 bg-[#f0f4f9] p-6 shadow-sm">
-              <h2 className="text-center text-2xl font-semibold">Бронь подтверждена. До встречи!</h2>
-              <button type="button" className="mt-6 w-full rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600" onClick={() => { setConfirmed(false); setSelected(undefined); setDate(undefined); setSlot(undefined); setDetails(false); setSlots([]); void loadTypes() }}>Забронировать еще</button>
-            </div>
-          </div>
+        {!confirmed && settings && <p className="rounded-xl bg-white p-4 text-sm text-slate-600">Часовой пояс: {settings.timezone}. Ежедневно {settings.opensAt}–{settings.closesAt}, шаг начала {settings.slotStepMinutes} минут.</p>}
+        {confirmed ? <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h1 className="text-center text-2xl font-semibold">Бронь подтверждена. До встречи!</h1>
+          <button type="button" className="mt-6 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600" onClick={() => { setConfirmed(false); setSelected(undefined); setDate(undefined); setSlot(undefined); setDetails(false); setSlots([]); void loadTypes() }}>Забронировать еще</button>
         </section>
           : !selected ? <section><h1 className="mb-4 text-3xl font-bold">Выберите тип встречи</h1>{types.length === 0 && <p>Пока нет доступных типов встреч.</p>}<div className="grid gap-4 sm:grid-cols-2">{types.map((item) => <button key={item.id} onClick={() => { setSelected(item); setDate(undefined); setSlot(undefined); setDetails(false); setMonth(today().slice(0, 7)); setError('') }} className="rounded-xl border bg-white p-5 text-left shadow-sm hover:border-orange-500"><strong className="block text-lg">{item.name}</strong><span className="block">{item.description}</span><span>{item.durationMinutes} мин.</span></button>)}</div></section>
             : <section className="space-y-8">

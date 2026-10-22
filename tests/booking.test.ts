@@ -45,6 +45,31 @@ describe('booking HTTP contract', () => {
     try { expect((await reopened.inject('/api/event-types')).json()).toHaveLength(1) } finally { await reopened.close() }
   })
 
+  it('rejects malformed types and guest details without changing the saved lists', async () => {
+    const { app } = await server()
+    try {
+      const input = { id: 'intro', name: 'Знакомство', description: 'Поговорим', durationMinutes: 45 }
+      for (const invalid of [
+        { ...input, id: 'UPPER' }, { ...input, id: '' }, { ...input, name: '   ' },
+        { ...input, description: '   ' }, { ...input, durationMinutes: 0 },
+        { ...input, durationMinutes: 541 }, { ...input, durationMinutes: 1.5 },
+      ]) {
+        expect((await app.inject({ method: 'POST', url: '/api/event-types', payload: invalid })).statusCode).toBe(400)
+      }
+      expect((await app.inject('/api/event-types')).json()).toEqual([])
+      expect((await app.inject({ method: 'POST', url: '/api/event-types', payload: input })).statusCode).toBe(200)
+      expect((await app.inject({ method: 'POST', url: '/api/event-types', payload: input })).statusCode).toBe(409)
+      const booking = { eventTypeId: 'intro', startsAt: '2026-10-23T07:00:00Z', guestName: 'Гость', guestEmail: 'guest@example.com' }
+      for (const invalid of [
+        { ...booking, guestName: '   ' }, { ...booking, guestEmail: 'invalid' },
+        { ...booking, guestEmail: 'a'.repeat(250) + '@example.com' },
+      ]) {
+        expect((await app.inject({ method: 'POST', url: '/api/bookings', payload: invalid })).statusCode).toBe(400)
+      }
+      expect((await app.inject('/api/admin/bookings')).json()).toEqual([])
+    } finally { await app.close() }
+  })
+
   it('edits an event type without changing its id or existing booking intervals', async () => {
     const { app, databasePath } = await server()
     try {
