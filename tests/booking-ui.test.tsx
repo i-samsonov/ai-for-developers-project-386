@@ -71,7 +71,7 @@ it('shows past, booked and too-late starts while allowing an available date', as
   } finally { await closeServer(app) }
 })
 
-it('confirms a guest booking with only the agreed message and lets the guest start again', async () => {
+it('confirms a guest booking with its details and lets the guest start again', async () => {
   const day = today()
   const app = await server(() => new Date(`${day}T09:00:00Z`))
   try {
@@ -87,8 +87,12 @@ it('confirms a guest booking with only the agreed message and lets the guest sta
     fireEvent.click(screen.getByRole('button', { name: 'Подтвердить запись' }))
     const main = screen.getByRole('main')
     expect(await within(main).findByRole('heading', { name: 'Бронь подтверждена. До встречи!' })).toBeTruthy()
-    expect(within(main).queryByText('Информация')).toBeNull()
-    expect(within(main).queryByRole('heading', { name: 'Запись на звонок' })).toBeNull()
+    expect(within(main).getByRole('heading', { name: 'Запись на звонок' })).toBeTruthy()
+    const information = within(main).getByRole('heading', { name: 'Информация' }).parentElement!
+    expect(within(information).getByText(dateLabel(dayAt(day, 1)))).toBeTruthy()
+    expect(within(information).getByText('09:00 - 09:30')).toBeTruthy()
+    expect(within(information).getByText('17')).toBeTruthy()
+    expect(within(information).getByText('30 мин')).toBeTruthy()
     expect(within(main).getByRole('button', { name: 'Забронировать еще' })).toBeTruthy()
     fireEvent.click(within(main).getByRole('button', { name: 'Забронировать еще' }))
     expect(await within(main).findByRole('heading', { name: 'Выберите тип встречи' })).toBeTruthy()
