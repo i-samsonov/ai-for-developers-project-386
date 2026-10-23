@@ -1,4 +1,5 @@
 import Fastify from 'fastify'
+import fastifyStatic from '@fastify/static'
 import { openStore, type Store } from './storage.js'
 import { registerCalendarRoutes } from './generated/routes.js'
 import type { EventType, UpcomingBooking } from './generated/types.js'
@@ -14,7 +15,7 @@ const failure = (code: string, message: string) => ({ code, message })
 type EventRow = EventType
 type BookingRow = { id: number; eventTypeId: string; startsAt: number; endsAt: number; guestName: string; guestEmail: string }
 
-export function createApp(options: { databasePath?: string; now?: () => Date; logger?: boolean } = {}) {
+export function createApp(options: { databasePath?: string; now?: () => Date; logger?: boolean; staticRoot?: string } = {}) {
   const app = Fastify({ logger: options.logger ?? true })
   let db: Store
   app.addHook('onReady', async () => { db = await openStore(options.databasePath ?? process.env.DATABASE_PATH ?? 'calendar.sqlite') })
@@ -116,6 +117,7 @@ export function createApp(options: { databasePath?: string; now?: () => Date; lo
       return { deleted: true as const }
     },
   })
+  if (options.staticRoot) void app.register(fastifyStatic, { root: options.staticRoot })
   app.addHook('onClose', async () => { db?.close() })
   return app
 }
