@@ -54,13 +54,14 @@ npm run preview
 
 ## Docker и деплой
 
+Работающее приложение: https://calendar-calls-386.onrender.com
+
 ```bash
 docker build -t calendar-calls .
 docker run --rm -e PORT=8080 -p 8080:8080 calendar-calls
 ```
 
 Откройте http://localhost:8080 и http://localhost:8080/health. Контейнер слушает `0.0.0.0` и использует `PORT`, переданный платформой. Файл базы по умолчанию хранится в `/data/calendar.sqlite`; без подключённого постоянного тома данные теряются при пересоздании контейнера. Для постоянного хранения подключите том к `/data` или задайте `DATABASE_PATH` на путь в смонтированном каталоге.
-
 
 Проверки запускаются также в GitHub Actions (`.github/workflows/ci.yml`). Файл `.github/workflows/hexlet-check.yml` отвечает за отдельные проверки Хекслета.
 
